@@ -22,7 +22,10 @@ namespace DiskAccessMethods.DiscStates
                 Disc.RemoveRequest(r);
                 Disc.LastTimeInMilliseconds += Disc.IoOperationTimeInMilliseconds;
             }
-            if(requests.Count == 0) Disc.SetState<WaitDiscState>();
+
+            if (requests.Count != 0) return;
+            Disc.SetState<WaitDiscState>();
+            Disc.Update(nowInMilliseconds);
         }
 
         private bool IsEnoughTimeOnOperation(int nowInMilliseconds) => Disc.IoOperationTimeInMilliseconds + Disc.LastTimeInMilliseconds <= nowInMilliseconds;

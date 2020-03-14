@@ -10,6 +10,7 @@
             if (nextRequest == null) return;
             Disc.NextDataBlockAddress = nextRequest.DataBlockAddress;
             Disc.SetState<HeadMovingDiscState>();
+            Disc.Update(nowInMilliseconds);
         }
     }
 }

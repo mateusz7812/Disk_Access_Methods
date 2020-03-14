@@ -37,8 +37,13 @@ namespace DiskAccessMethods
         public void SetState<T>() where T : AbstractDiscState => State = (T)Activator.CreateInstance(typeof(T), this);
         public int GetAddressOfBlock(IDataBlock dataBlock) => _dataBlocks.IndexOf(dataBlock);
         public IDataBlock GetDataBlockOfCurrentAddress() => _dataBlocks[CurrentAddress];
-        public IAccessRequest HandleSelectionRequest(List<IAccessRequest> accessRequests) => _chainedBaseStrategy.HandleSelectionRequest(accessRequests);
-        public List<IAccessRequest> GetRequestsByBlockNumber(int dataBlockNumber) => _accessRequests[dataBlockNumber];
+        public IAccessRequest HandleSelectionRequest(List<IAccessRequest> accessRequests) => _chainedBaseStrategy?.HandleSelectionRequest(accessRequests);
+        public List<IAccessRequest> GetRequestsByBlockNumber(int dataBlockNumber)
+        {
+            if(!_accessRequests.ContainsKey(dataBlockNumber)) _accessRequests.Add(dataBlockNumber, new List<IAccessRequest>());
+            return _accessRequests[dataBlockNumber];
+        }
+
         public List<IAccessRequest> GetAllAccessRequests() => _accessRequests.Values.SelectMany(x => x).ToList();
     }
 }

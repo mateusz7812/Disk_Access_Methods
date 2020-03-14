@@ -11,7 +11,9 @@ namespace DiskAccessMethods.DiscStates
         public override void Update(int nowInMilliseconds)
         {
             while (!DiscIsPositionedOnNextBlock() && IsEnoughTimeOnNextMove(nowInMilliseconds)) MakeDiscHeadMove();
-            if (DiscIsPositionedOnNextBlock()) Disc.SetState<RequestHandlingDiscState>();
+            if (!DiscIsPositionedOnNextBlock()) return;
+            Disc.SetState<RequestHandlingDiscState>();
+            Disc.Update(nowInMilliseconds);
         }
 
         private bool IsEnoughTimeOnNextMove(int nowInMilliseconds) => Disc.LastTimeInMilliseconds + Disc.MoveToNextBlockTimeInMilliseconds <= nowInMilliseconds;

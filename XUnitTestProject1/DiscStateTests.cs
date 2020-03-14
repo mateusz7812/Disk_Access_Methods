@@ -8,6 +8,8 @@ namespace XUnitTestProject1
 {
     public class DiscStateTests
     {
+        private Mock<IAccessRequest> _requestMock;
+
         [Fact]
         public void TestWaitDiscState()
         {
@@ -40,6 +42,9 @@ namespace XUnitTestProject1
             var dataBlockMock2 = new Mock<IDataBlock>();
             var disc = new Disc(null);
             disc.AddDataBlocks(new List<IDataBlock>(){ dataBlockMock1.Object, dataBlockMock2.Object });
+            _requestMock = new Mock<IAccessRequest>();
+            _requestMock.Setup(m=>m.DataBlockAddress).Returns(1);
+            disc.AddAccessRequests(new List<IAccessRequest>(){_requestMock.Object});
             disc.NextDataBlockAddress = 1;
             disc.SetState<HeadMovingDiscState>();
             disc.MoveToNextBlockTimeInMilliseconds = 100;
