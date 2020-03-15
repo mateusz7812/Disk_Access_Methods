@@ -8,92 +8,61 @@ namespace XUnitTestProject1
 {
     public class DiscStateTests
     {
-        private Mock<IAccessRequest> _requestMock;
-
-        [Fact]
-        public void TestWaitDiscState()
-        {
-            var dataBlockMock1 = new Mock<IDataBlock>();
-            var dataBlockMock2 = new Mock<IDataBlock>();
-            var accessRequestMock = new Mock<IAccessRequest>();
-            accessRequestMock.Setup(m => m.DataBlockAddress).Returns(1);
-            var discAccessStrategy = new Mock<AbstractDiscAccessStrategy>(new []{ (object) null });
-            discAccessStrategy.Setup(m 
-                    => m.HandleSelectionRequest(It.IsAny<List<IAccessRequest>>()))
-                .Returns(accessRequestMock.Object);
-            IDisc disc = new Disc(discAccessStrategy.Object);
-            disc.AddDataBlocks(new List<IDataBlock>() { dataBlockMock1.Object, dataBlockMock2.Object });
-            disc.AddAccessRequests(new List<IAccessRequest>(){ accessRequestMock.Object });
-
-            Assert.IsType<WaitDiscState>(disc.State);
-
-            disc.Update(0);
-
-            discAccessStrategy.VerifyAll();
-            accessRequestMock.VerifyAll();
-            Assert.Equal(1 , disc.NextDataBlockAddress);
-            Assert.IsType<HeadMovingDiscState>(disc.State);
-        }
-
         [Fact]
         public void TestHeadMovingDiscState()
         {
-            var dataBlockMock1 = new Mock<IDataBlock>();
-            var dataBlockMock2 = new Mock<IDataBlock>();
-            var disc = new Disc(null);
-            disc.AddDataBlocks(new List<IDataBlock>(){ dataBlockMock1.Object, dataBlockMock2.Object });
-            _requestMock = new Mock<IAccessRequest>();
-            _requestMock.Setup(m=>m.DataBlockAddress).Returns(1);
-            disc.AddAccessRequests(new List<IAccessRequest>(){_requestMock.Object});
-            disc.NextDataBlockAddress = 1;
-            disc.SetState<HeadMovingDiscState>();
-            disc.MoveToNextBlockTimeInMilliseconds = 100;
-            Assert.Equal(0, disc.CurrentAddress);
+            var time = 0;
+            const int timeForMove = 11;
+            var currentPosition = 0;
+            const int destinationPosition = 4;
 
-            disc.Update(90);
-            Assert.Equal(0, disc.CurrentAddress);
+            var discMock = new Mock<IDisc>();
+            discMock.Setup(disc => disc.HandleNextMove()).Callback((() =>
+            {
+                currentPosition++;
+                time += timeForMove;
+            }));
+            discMock.Setup(disc => disc.DiscReadyToReading()).Returns(() => currentPosition == destinationPosition);
+            discMock.Setup(disc => disc.IsEnoughTimeOnNextMove(It.IsAny<int>()))
+                .Returns((int now) => time + timeForMove <= now);
+            discMock.Setup(disc => disc.SetState<RequestHandlingDiscState>());
+            var discState = new HeadMovingDiscState(discMock.Object);
 
-            disc.Update(100);
-            Assert.Equal(1, disc.GetAddressOfBlock(dataBlockMock2.Object));
-            Assert.Equal(1, disc.CurrentAddress);
-            Assert.IsType<RequestHandlingDiscState>(disc.State);
+            discState.Update(30);
+            Assert.Equal(2, currentPosition);
+            discState.Update(60);
+            Assert.Equal(4, currentPosition);
+
+            discMock.VerifyAll();
         }
 
         [Fact]
         public void TestRequestHandlingDiscState()
         {
-            var dataBlockMock1 = new Mock<IDataBlock>();
-            var dataBlockMock2 = new Mock<IDataBlock>();
-            var disc = new Disc(null);
-            disc.AddDataBlocks(new List<IDataBlock>() { dataBlockMock1.Object, dataBlockMock2.Object });
-            disc.NextDataBlockAddress = 1;
-            disc.SetState<RequestHandlingDiscState>();
+            var time = 0;
+            const int timeForOperation = 11;
 
-            var accessRequestMock1 = new Mock<IAccessRequest>();
-            accessRequestMock1.SetupAllProperties();
-            accessRequestMock1.Setup(m=>m.DataBlockAddress).Returns(1);
-            accessRequestMock1.Setup(m=>m.CreateTime).Returns(0);
-            accessRequestMock1.Setup(m => m.Visit(It.IsAny<IDataBlock>()));
-            disc.AddAccessRequests(new List<IAccessRequest> {accessRequestMock1.Object});
+            var requests = new List<string>() { "request1", "request2"};
 
-            var accessRequestMock2 = new Mock<IAccessRequest>();
-            accessRequestMock2.SetupAllProperties();
-            accessRequestMock2.Setup(m=>m.DataBlockAddress).Returns(1);
-            accessRequestMock2.Setup(m=>m.CreateTime).Returns(1);
-            accessRequestMock2.Setup(m => m.Visit(It.IsAny<IDataBlock>()));
-            disc.AddAccessRequests(new List<IAccessRequest> {accessRequestMock2.Object});
+            var discMock = new Mock<IDisc>();
+            discMock.Setup(disc => disc.CurrentAddressHaveNotDoneRequests()).Returns(() => requests.Count != 0);
+            discMock.Setup(disc => disc.IsEnoughTimeOnOperation(It.IsAny<int>()))
+                .Returns((int now) => time + timeForOperation <= now);
+            discMock.Setup(disc => disc.HandleNextRequest()).Callback(() =>
+            {
+                requests.RemoveAt(0);
+                time += timeForOperation;
+            });
+            discMock.Setup(disc => disc.SetState<HeadMovingDiscState>());
+            var discState = new RequestHandlingDiscState(discMock.Object);
 
-            disc.IoOperationTimeInMilliseconds = 100;
+            discState.Update(20);
+            Assert.Single(requests);
 
-            disc.Update(150);
-            accessRequestMock1.VerifyAll();
-            Assert.Single(disc.GetRequestsByBlockNumber(1));
+            discState.Update(30);
+            Assert.Empty(requests);
 
-            disc.Update(300);
-            accessRequestMock2.VerifyAll();
-            Assert.Empty(disc.GetRequestsByBlockNumber(1));
-
-            Assert.IsType<WaitDiscState>(disc.State);
+            discMock.VerifyAll();
         }
     }
 }

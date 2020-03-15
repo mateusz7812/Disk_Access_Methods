@@ -4,25 +4,16 @@ namespace DiskAccessMethods.DiscStates
 {
     public class HeadMovingDiscState : AbstractDiscState
     {
-        public HeadMovingDiscState(IDisc disc) : base(disc) => _direction = Disc.NextDataBlockAddress > Disc.CurrentAddress ? 1 : -1;
-
-        private readonly int _direction;
+        public HeadMovingDiscState(IDisc disc) : base(disc) { }
 
         public override void Update(int nowInMilliseconds)
         {
-            while (!DiscIsPositionedOnNextBlock() && IsEnoughTimeOnNextMove(nowInMilliseconds)) MakeDiscHeadMove();
-            if (!DiscIsPositionedOnNextBlock()) return;
+            while (!Disc.DiscReadyToReading() && Disc.IsEnoughTimeOnNextMove(nowInMilliseconds))
+                Disc.HandleNextMove();
+
+            if (!Disc.DiscReadyToReading()) return;
             Disc.SetState<RequestHandlingDiscState>();
             Disc.Update(nowInMilliseconds);
-        }
-
-        private bool IsEnoughTimeOnNextMove(int nowInMilliseconds) => Disc.LastTimeInMilliseconds + Disc.MoveToNextBlockTimeInMilliseconds <= nowInMilliseconds;
-        private bool DiscIsPositionedOnNextBlock() => Disc.CurrentAddress == Disc.NextDataBlockAddress;
-
-        private void MakeDiscHeadMove()
-        {
-            Disc.LastTimeInMilliseconds += Disc.MoveToNextBlockTimeInMilliseconds;
-            Disc.CurrentAddress += _direction;
         }
     }
 }

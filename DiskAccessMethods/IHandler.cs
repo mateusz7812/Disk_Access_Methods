@@ -6,6 +6,7 @@ namespace DiskAccessMethods
 {
     public interface IHandler
     {
-        IAccessRequest HandleSelectionRequest(List<IAccessRequest> accessRequests);
+        int? HandleNextMoveSelection(int currentAddress, List<IAccessRequest> requests);
+        bool? HandleDiscReadingReadiness(int currentAddress, List<IAccessRequest> requests);
     }
 }

@@ -10,7 +10,6 @@ namespace DiskAccessMethods
         int CurrentAddress { get; set; }
         int MoveToNextBlockTimeInMilliseconds { get; }
         int IoOperationTimeInMilliseconds { get; }
-        int NextDataBlockAddress { get; set; }
         IDiscState State { get; }
 
         void SetState<T>() where T: AbstractDiscState;
@@ -18,9 +17,14 @@ namespace DiskAccessMethods
         void AddDataBlocks(List<IDataBlock> dataBlocks);
         void AddAccessRequests(List<IAccessRequest> accessRequests);
         void RemoveRequest(IAccessRequest accessRequest);
+        void HandleNextMove();
+        void HandleNextRequest();
+        bool IsEnoughTimeOnNextMove(int nowInMilliseconds);
         IDataBlock GetDataBlockOfCurrentAddress();
-        IAccessRequest HandleSelectionRequest(List<IAccessRequest> accessRequests);
         List<IAccessRequest> GetRequestsByBlockNumber(int dataBlockNumber);
         List<IAccessRequest> GetAllAccessRequests();
+        bool DiscReadyToReading();
+        bool IsEnoughTimeOnOperation(int nowInMilliseconds);
+        bool CurrentAddressHaveNotDoneRequests();
     }
 }

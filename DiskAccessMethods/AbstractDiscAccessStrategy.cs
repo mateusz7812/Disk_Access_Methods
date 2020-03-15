@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DiskAccessMethods
@@ -7,18 +8,30 @@ namespace DiskAccessMethods
     public abstract class AbstractDiscAccessStrategy : IHandler
     {
         private readonly IHandler _nextHandler;
+        protected int? NextDataAddress = null;
 
         protected AbstractDiscAccessStrategy(IHandler nextHandler)
         {
             _nextHandler = nextHandler;
         }
-
-        public virtual IAccessRequest HandleSelectionRequest(List<IAccessRequest> accessRequests)
+        
+        public int? HandleNextMoveSelection(int currentAddress, List<IAccessRequest> requests)
         {
-            var nextRequest = SelectNextRequest(accessRequests);
-            return nextRequest ?? _nextHandler?.HandleSelectionRequest(accessRequests);
+            var nextMove = SelectNextMove(currentAddress, requests);
+            return nextMove ?? _nextHandler?.HandleNextMoveSelection(currentAddress, requests);
         }
 
-        protected abstract IAccessRequest SelectNextRequest(List<IAccessRequest> accessRequests);
+        protected abstract int? SelectNextMove(int currentAddress, List<IAccessRequest> requests);
+
+        public bool? HandleDiscReadingReadiness(int currentAddress, List<IAccessRequest> requests)
+        {
+            var isDiscReady = IsDiscReadyToReading(currentAddress, requests);
+            return isDiscReady ?? _nextHandler.HandleDiscReadingReadiness(currentAddress, requests);
+        }
+        
+        protected bool? IsDiscReadyToReading(int currentAddress, List<IAccessRequest> requests)
+        {
+            return NextDataAddress == currentAddress && requests.Any(x => x.DataBlockAddress.Equals(NextDataAddress));
+        }
     }
 }

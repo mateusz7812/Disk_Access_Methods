@@ -37,5 +37,7 @@ namespace XUnitTestProject1
             Assert.Equal("data2", dataBlock.Data);
             writeObserverMock.VerifyAll();
         }
+
+
     }
 }
