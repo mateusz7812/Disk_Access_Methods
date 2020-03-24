@@ -8,7 +8,7 @@ namespace DiskAccessMethods
     public abstract class AbstractDiscAccessStrategy : IHandler
     {
         private readonly IHandler _nextHandler;
-        protected int? NextDataAddress = null;
+        protected int NextDataAddress = 0;
 
         protected AbstractDiscAccessStrategy(IHandler nextHandler)
         {
@@ -26,10 +26,10 @@ namespace DiskAccessMethods
         public bool? HandleDiscReadingReadiness(int currentAddress, List<IAccessRequest> requests)
         {
             var isDiscReady = IsDiscReadyToReading(currentAddress, requests);
-            return isDiscReady ?? _nextHandler.HandleDiscReadingReadiness(currentAddress, requests);
+            return isDiscReady ?? _nextHandler?.HandleDiscReadingReadiness(currentAddress, requests);
         }
         
-        protected bool? IsDiscReadyToReading(int currentAddress, List<IAccessRequest> requests)
+        protected virtual bool? IsDiscReadyToReading(int currentAddress, List<IAccessRequest> requests)
         {
             return NextDataAddress == currentAddress && requests.Any(x => x.DataBlockAddress.Equals(NextDataAddress));
         }
