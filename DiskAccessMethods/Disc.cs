@@ -7,9 +7,10 @@ namespace DiskAccessMethods
 {
     public class Disc : IDisc
     {
-        public Disc(AbstractDiscAccessStrategy chainedBaseStrategy)
+        public Disc(AbstractDiscAccessStrategy chainedBaseStrategy, IDiscConfig config)
         {
             _chainedBaseStrategy = chainedBaseStrategy;
+            this.Config = config;
             SetState<HeadMovingDiscState>();
         }
 
@@ -25,9 +26,9 @@ namespace DiskAccessMethods
             _accessRequests[blockPosition].Add(accessRequest);
         }
 
-        public int LastTimeInMilliseconds { set; get; } = 0;
+        private int LastTimeInMilliseconds { set; get; } = 0;
 
-        public int CurrentAddress
+        private int CurrentAddress
         {
             get => _currentAddress;
             set
@@ -40,19 +41,18 @@ namespace DiskAccessMethods
             }
         }
 
-        public int MoveToNextBlockTimeInMilliseconds { get; set; } = 100;
-        public int IoOperationTimeInMilliseconds { get; set; } = 100;
-        public IDiscState State { get; private set; }
+        public readonly IDiscConfig Config;
+        private IDiscState State { get; set; }
 
         public void Update(int milliseconds) => State.Update(milliseconds);
         public void AddDataBlocks(List<IDataBlock> dataBlocks) => _dataBlocks.AddRange(dataBlocks);
         public void AddAccessRequests(List<IAccessRequest> accessRequests) => accessRequests.ForEach(AddAccessRequest);
-        public void RemoveRequest(IAccessRequest accessRequest) => _accessRequests[accessRequest.DataBlockAddress].Remove(accessRequest);
+        private void RemoveRequest(IAccessRequest accessRequest) => _accessRequests[accessRequest.DataBlockAddress].Remove(accessRequest);
         public void HandleNextMove()
         {
-            var nextMove = _chainedBaseStrategy.HandleNextMoveSelection(CurrentAddress, GetAllAccessRequests());
+            var nextMove = _chainedBaseStrategy.HandleNextMoveSelection(CurrentAddress, GetAllWaitingAccessRequests());
             if (nextMove != null) CurrentAddress += (int) nextMove;
-            LastTimeInMilliseconds += MoveToNextBlockTimeInMilliseconds;
+            LastTimeInMilliseconds += Config.MoveToNextBlockTimeInMilliseconds;
         }
 
         public void HandleNextRequest()
@@ -64,25 +64,25 @@ namespace DiskAccessMethods
             var r = requests.First();
             r.Visit(dataBlock);
             RemoveRequest(r);
-            LastTimeInMilliseconds += IoOperationTimeInMilliseconds;
+            LastTimeInMilliseconds += Config.IoOperationTimeInMilliseconds;
         }
 
-        public bool IsEnoughTimeOnNextMove(int nowInMilliseconds) => LastTimeInMilliseconds + MoveToNextBlockTimeInMilliseconds <= nowInMilliseconds;
-        public bool IsEnoughTimeOnOperation(int nowInMilliseconds) => IoOperationTimeInMilliseconds + LastTimeInMilliseconds <= nowInMilliseconds;
+        public bool IsEnoughTimeOnNextMove(int nowInMilliseconds) => LastTimeInMilliseconds + Config.MoveToNextBlockTimeInMilliseconds <= nowInMilliseconds;
+        public bool IsEnoughTimeOnOperation(int nowInMilliseconds) => Config.IoOperationTimeInMilliseconds + LastTimeInMilliseconds <= nowInMilliseconds;
         public bool CurrentAddressHaveNotDoneRequests() => GetRequestsByBlockNumber(CurrentAddress).Count != 0;
 
         public void SetState<T>() where T : AbstractDiscState => State = (T)Activator.CreateInstance(typeof(T), this);
-        public IDataBlock GetDataBlockOfCurrentAddress() => _dataBlocks[CurrentAddress];
-        public List<IAccessRequest> GetRequestsByBlockNumber(int dataBlockNumber)
+        private IDataBlock GetDataBlockOfCurrentAddress() => _dataBlocks[CurrentAddress];
+        private List<IAccessRequest> GetRequestsByBlockNumber(int dataBlockNumber)
         {
             if(!_accessRequests.ContainsKey(dataBlockNumber)) _accessRequests.Add(dataBlockNumber, new List<IAccessRequest>());
             return _accessRequests[dataBlockNumber];
         }
 
-        public List<IAccessRequest> GetAllAccessRequests() => _accessRequests.Values.SelectMany(x => x).ToList();
+        public List<IAccessRequest> GetAllWaitingAccessRequests() => _accessRequests.Values.SelectMany(x => x).Where(r=>r.CreateTime <= LastTimeInMilliseconds).ToList();
         public bool DiscReadyToReading()
         {
-            return _chainedBaseStrategy.HandleDiscReadingReadiness(CurrentAddress, GetAllAccessRequests()) ?? false;
+            return _chainedBaseStrategy.HandleDiscReadingReadiness(CurrentAddress, GetAllWaitingAccessRequests()) ?? false;
         }
     }
 }

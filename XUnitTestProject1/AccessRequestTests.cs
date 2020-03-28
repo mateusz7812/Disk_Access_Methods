@@ -38,6 +38,17 @@ namespace XUnitTestProject1
             writeObserverMock.VerifyAll();
         }
 
+        [Fact]
+        public void TestRealTimeReadRequest()
+        {
+            var data = "";
+            var dataBlock = new DataBlock { Data = "data" };
+            var readRequest = new CallbackRealTimeReadAccessRequest(0, 0, (s => data = s), 100);
+
+            dataBlock.Accept(readRequest);
+
+            Assert.Equal("data", data);
+        }
 
     }
 }

@@ -46,7 +46,7 @@ namespace XUnitTestProject1
         }
 
         [Fact]
-        public void SsftDiscAccessStrategy()
+        public void TestSsftDiscAccessStrategy()
         {
 
             var currentAddress = 0;
@@ -224,10 +224,9 @@ namespace XUnitTestProject1
             Assert.Equal(1, strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.False(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
 
-            currentAddress = 4;
-            Assert.Equal(0, strategy.HandleNextMoveSelection(currentAddress, accessRequests));
-            Assert.True(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
-
+            accessRequests.RemoveAt(1);
+            Assert.Null(strategy.HandleNextMoveSelection(currentAddress, accessRequests));
+            Assert.Null(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
         }
 
         [Fact]
@@ -265,8 +264,8 @@ namespace XUnitTestProject1
             currentAddress = 10;
             Assert.Equal(0, strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.True(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
-            accessRequests.RemoveAt(1);
 
+            accessRequests.RemoveAt(1);
             Assert.Null(strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.Null(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
             

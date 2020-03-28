@@ -11,7 +11,7 @@ namespace XUnitTestProject1
 
         protected override int? SelectNextMove(int currentAddress, List<IAccessRequest> accessRequests)
         {
-            if (currentAddress == NextDataAddress || NextDataAddress == null)
+            if (currentAddress == NextDataAddress)
             {
                 if (accessRequests.Count == 0) return null;
                 NextDataAddress = accessRequests[0].DataBlockAddress;
