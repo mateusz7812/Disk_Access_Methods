@@ -38,7 +38,7 @@ namespace DiskAccessMethods.DiscAccessStrategies
         private static IRealTime SelectDeathNearestRealTime(IEnumerable<IAccessRequest> requests)
         {
             var realTimes = requests.OfType<IRealTime>();
-            var orderedRealTimes = realTimes.OrderBy(r=>r.Lifetime);
+            var orderedRealTimes = realTimes.OrderBy(r=>r.Deadline);
             return orderedRealTimes.FirstOrDefault();
         }
     }

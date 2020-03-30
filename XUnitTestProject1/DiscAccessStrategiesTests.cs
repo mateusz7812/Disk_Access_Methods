@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DiskAccessMethods;
+using DiskAccessMethods.AccessRequests;
 using DiskAccessMethods.DiscAccessStrategies;
 using Moq;
 using Xunit;
@@ -145,7 +147,7 @@ namespace XUnitTestProject1
             request3Mock.Setup(request => request.DataBlockAddress).Returns(6);
             var accessRequests = new List<IAccessRequest>() { request1Mock.Object, request2Mock.Object, request3Mock.Object };
 
-            var strategy = new C_ScanDiscAccessStrategy(7, null);
+            var strategy = new CScanDiscAccessStrategy(7, null);
 
             Assert.Equal(1, strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.True(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
@@ -199,7 +201,7 @@ namespace XUnitTestProject1
             request2Mock.Setup(request => request.DataBlockAddress).Returns(1);
             request2Mock.Setup(request => request.DataBlockAddress).Returns(1);
             var realTimeRequestMock = request2Mock.As<IRealTime>();
-            realTimeRequestMock.Setup(m => m.Lifetime).Returns(100);
+            realTimeRequestMock.Setup(m => m.Deadline).Returns(100);
 
             accessRequests.Add(realTimeRequestMock.Object as IAccessRequest);
 
@@ -217,7 +219,7 @@ namespace XUnitTestProject1
             var request4Mock = new Mock<IAccessRequest>();
             request4Mock.Setup(request => request.DataBlockAddress).Returns(4);
             var realTimeRequestMock3 = request4Mock.As<IRealTime>();
-            realTimeRequestMock3.Setup(m => m.Lifetime).Returns(100);
+            realTimeRequestMock3.Setup(m => m.Deadline).Returns(100);
             accessRequests.Add(realTimeRequestMock3.Object as IAccessRequest);
 
             currentAddress = 3;
@@ -232,23 +234,24 @@ namespace XUnitTestProject1
         [Fact]
         public void Test_FdScan()
         {
+
             var currentAddress = 0;
 
             var request1Mock = new Mock<IAccessRequest>();
             request1Mock.Setup(request => request.DataBlockAddress).Returns(5);
             var accessRequests = new List<IAccessRequest>() { request1Mock.Object };
 
-            var strategy = new FdScanDiscAccessStrategy(null, 100, ()=>1000);
+            var strategy = new FdScanDiscAccessStrategy(null, 50, ()=>300);
 
             Assert.Null(strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.Null(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
 
-            var request2Mock = new Mock<IAccessRequest>();
+            var request2Mock = new Mock<IRealTimeRequest>();
             request2Mock.Setup(request => request.DataBlockAddress).Returns(10);
-            var realTimeRequestMock = request2Mock.As<IRealTime>();
-            realTimeRequestMock.Setup(m => m.Lifetime).Returns(1000);
+            request2Mock.Setup(m => m.Deadline).Returns(1000);
 
-            accessRequests.Add(realTimeRequestMock.Object as IAccessRequest);
+            var request2 = new CallbackRealTimeWriteAccessRequest(10, 0, 1000, "asd", (b)=>{});
+            accessRequests.Add(request2Mock.Object);
 
             Assert.Equal(1, strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.False(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
@@ -269,12 +272,11 @@ namespace XUnitTestProject1
             Assert.Null(strategy.HandleNextMoveSelection(currentAddress, accessRequests));
             Assert.Null(strategy.HandleDiscReadingReadiness(currentAddress, accessRequests));
             
-            var request4Mock = new Mock<IAccessRequest>();
+            var request4Mock = new Mock<IRealTimeRequest>();
             request4Mock.Setup(request => request.DataBlockAddress).Returns(20);
-            var realTimeRequestMock3 = request4Mock.As<IRealTime>();
-            realTimeRequestMock3.Setup(m => m.Lifetime).Returns(100);
+            request4Mock.Setup(m => m.Deadline).Returns(100);
 
-            accessRequests.Add(realTimeRequestMock3.Object as IAccessRequest);
+            accessRequests.Add(request4Mock.Object);
 
             currentAddress = 25;
             Assert.Null(strategy.HandleNextMoveSelection(currentAddress, accessRequests));

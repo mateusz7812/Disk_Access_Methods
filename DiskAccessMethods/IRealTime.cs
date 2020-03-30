@@ -6,6 +6,6 @@ namespace DiskAccessMethods
 {
     public interface IRealTime
     {
-        int Lifetime { get; }
+        int Deadline { get; }
     }
 }

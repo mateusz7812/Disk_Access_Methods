@@ -8,9 +8,9 @@ namespace DiskAccessMethods.AccessRequests
     {
         public CallbackRealTimeWriteAccessRequest(int dataBlockPosition, int createTime, int deadline, string data, Action<bool> callback) : base(dataBlockPosition, createTime, data, callback)
         {
-            Lifetime = deadline;
+            Deadline = deadline;
         }
 
-        public int Lifetime { get; }
+        public int Deadline { get; }
     }
 }

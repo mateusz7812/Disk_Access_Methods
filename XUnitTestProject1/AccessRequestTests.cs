@@ -43,7 +43,7 @@ namespace XUnitTestProject1
         {
             var data = "";
             var dataBlock = new DataBlock { Data = "data" };
-            var readRequest = new CallbackRealTimeReadAccessRequest(0, 0, (s => data = s), 100);
+            var readRequest = new CallbackRealTimeReadAccessRequest(0, 0, 100, (s => data = s));
 
             dataBlock.Accept(readRequest);
 

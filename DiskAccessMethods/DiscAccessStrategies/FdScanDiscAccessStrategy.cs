@@ -8,13 +8,15 @@ namespace DiskAccessMethods.DiscAccessStrategies
     public class FdScanDiscAccessStrategy: AbstractDiscAccessStrategy
     {
         private readonly int _timeForMove;
-        private readonly Func<int> _freeTime;
+        private readonly Func<int> _currentTime;
         protected new int? NextDataAddress = null;
 
-        public FdScanDiscAccessStrategy(IHandler nextHandler, int timeForMove, Func<int> freeTime) : base(nextHandler)
+        public FdScanDiscAccessStrategy(int timeForMove, Func<int> currentTime) : this(null, timeForMove, currentTime) { }
+
+        public FdScanDiscAccessStrategy(IHandler nextHandler, int timeForMove, Func<int> currentTime) : base(nextHandler)
         {
             _timeForMove = timeForMove;
-            _freeTime = freeTime;
+            _currentTime = currentTime;
         }
 
         protected override int? SelectNextMove(int currentAddress, List<IAccessRequest> requests)
@@ -48,9 +50,14 @@ namespace DiskAccessMethods.DiscAccessStrategies
 
         private void RemoveUnreachableRequests(int currentAddress, ref List<IAccessRequest> requests)
         {
-            requests.RemoveAll(r => r is IRealTime time &&
-                                    (time.Lifetime + r.CreateTime +
-                                    Math.Abs(r.DataBlockAddress - currentAddress) * _timeForMove < _freeTime()));
+            requests.RemoveAll(request =>
+            {
+                if (!(request is IRealTime realTimeRequest)) return false;
+                var distance = Math.Abs(request.DataBlockAddress - currentAddress);
+                var timeToReach = distance * _timeForMove;
+                var timeWhenWillBeReached = timeToReach + _currentTime();
+                return timeWhenWillBeReached > realTimeRequest.Deadline;
+            });
         }
 
         protected override bool? IsDiscReadyToReading(int currentAddress, List<IAccessRequest> requests)

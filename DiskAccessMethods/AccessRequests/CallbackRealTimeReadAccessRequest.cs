@@ -6,11 +6,12 @@ namespace DiskAccessMethods.AccessRequests
 {
     public class CallbackRealTimeReadAccessRequest: CallbackReadAccessRequest, IRealTime
     {
-        public CallbackRealTimeReadAccessRequest(int dataBlockAddress, int createTime, Action<string> callback, int lifetime) : base(dataBlockAddress, createTime, callback)
+        public CallbackRealTimeReadAccessRequest(int dataBlockAddress, int createTime, int deadline,
+            Action<string> callback) : base(dataBlockAddress, createTime, callback)
         {
-            Lifetime = lifetime;
+            Deadline = deadline;
         }
 
-        public int Lifetime { get; }
+        public int Deadline { get; }
     }
 }

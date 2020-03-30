@@ -5,12 +5,14 @@ using System.Text;
 
 namespace DiskAccessMethods.DiscAccessStrategies
 {
-    public class C_ScanDiscAccessStrategy: AbstractDiscAccessStrategy
+    public class CScanDiscAccessStrategy: AbstractDiscAccessStrategy
     {
         private readonly int _discSize;
         private bool _readingMode = true;
 
-        public C_ScanDiscAccessStrategy(int discSize, IHandler nextHandler) : base(nextHandler)
+        public CScanDiscAccessStrategy(int discSize): this(discSize, null) { }
+
+        public CScanDiscAccessStrategy(int discSize, IHandler nextHandler) : base(nextHandler)
         {
             _discSize = discSize;
         }
